@@ -132,9 +132,6 @@ class AuditCompliancePage:
     # PAGE VALIDATION
 
     def expect_page_loaded(self):
-        """
-        Validates that the User Audit Log page is loaded.
-        """
 
         expect(
             self.user_audit_log_heading
@@ -147,11 +144,6 @@ class AuditCompliancePage:
     # KPI VALIDATION
 
     def expect_kpi_cards_visible(self):
-        """
-        Validates all Activity Overview KPI cards.
-
-        Values are NOT checked because they are dynamic.
-        """
 
         expect(
             self.total_events
@@ -172,9 +164,6 @@ class AuditCompliancePage:
     # ACTION DISTRIBUTION
 
     def expect_action_distribution_visible(self):
-        """
-        Validates that Action Distribution is displayed.
-        """
 
         expect(
             self.action_distribution
@@ -183,9 +172,6 @@ class AuditCompliancePage:
     # TOP ACTIVE USERS VALIDATION
 
     def expect_top_active_users_visible(self):
-        """
-        Validates Top Active Users section and chart.
-        """
 
         expect(
             self.top_active_users
@@ -198,9 +184,6 @@ class AuditCompliancePage:
     # DAILY ACTIVITY TIMELINE VALIDATION
 
     def expect_daily_activity_timeline_visible(self):
-        """
-        Validates Daily Activity Timeline section and chart.
-        """
 
         expect(
             self.daily_activity_timeline
@@ -217,9 +200,6 @@ class AuditCompliancePage:
     # COMPLETE DASHBOARD VALIDATION
 
     def expect_complete_dashboard(self):
-        """
-        Validates the complete User Audit Log dashboard.
-        """
 
         self.expect_page_loaded()
 
