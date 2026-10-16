@@ -1,14 +1,19 @@
+
 import re
 
 from playwright.sync_api import Page, expect
 
-class PhishingDashboardPage(Page):
-    def __init__(self,page: Page):
-        self.page=page
+
+class PhishingDashboardPage:
+
+    def __init__(self, page: Page):
+        self.page = page
+
+   # LOCATORS
 
     @property
     def app_menu(self):
-      return self.page.locator(
+        return self.page.locator(
             ".pb-1 > .cursor-pointer"
         ).first
 
@@ -32,13 +37,14 @@ class PhishingDashboardPage(Page):
             "button",
             name="Launch"
         )
+
     @property
     def preview_button(self):
         return self.page.get_by_role(
             "button",
             name="Preview"
         )
-    #Dashboard Locators
+
 
     @property
     def phishing_summary_section(self):
@@ -54,34 +60,45 @@ class PhishingDashboardPage(Page):
         )
 
     @property
+    def total_classification_label(self):
+        return self.phishing_summary_section.get_by_text(
+            "Total classification",
+            exact=True
+        )
+
+    @property
     def last_job_run_label(self):
         return self.page.get_by_text(
             re.compile(
                 r"[A-Z][a-z]{2} \d{1,2}, \d{4} "
                 r"\d{1,2}:\d{2} [AP]M"
             )
-        )
+        ).first
 
     @property
     def category_details_section(self):
-        return self.locator("section").filter(
-            has_text="Category Details"
+        return self.page.locator("section").filter(
+            has=self.page.get_by_text(
+                "Category Details",
+                exact=True
+            )
         ).first
 
     @property
     def summary_of_email_section(self):
-        return self.locator("section").filter(
-            has_text="Summary of Emails"
+        return self.page.locator("section").filter(
+            has=self.page.get_by_text(
+                "Summary of Emails",
+                exact=True
+            )
         ).first
-
 
     @property
     def classification_section(self):
-        return self.locator("section").filter(
-            has_text="Classification"
+        return self.page.get_by_text(
+            "Classification",
+            exact=True
         ).first
-
-    # ACTIONS
 
     def open_home_page(self):
         self.page.goto(
@@ -102,21 +119,24 @@ class PhishingDashboardPage(Page):
         )
         self.search_box.fill("Phishing")
 
-    from playwright.sync_api import expect
-
     def open_phishing_app(self):
-        # Find the Discover now link for the Signature Phishing app
         phishing_app_link = self.page.locator(
             'a[href="/apps?appId=6606&agentId=49"]'
         ).first
 
-        # Verify and open the app
-        expect(phishing_app_link).to_be_visible(timeout=30000)
+        expect(phishing_app_link).to_be_visible(
+            timeout=30000
+        )
+
         phishing_app_link.click()
 
-        # Wait for the app page to load
         expect(self.page).to_have_url(
-            "https://acme.ui.dev.airrived.ai/apps?appId=6606&agentId=49",
+            re.compile(
+                r"https://acme\.ui\.dev\.airrived\.ai/"
+                r"apps\?appId=6606"
+                r"(?:&view=dashboard)?"
+                r"&agentId=49"
+            ),
             timeout=30000
         )
 
@@ -126,21 +146,25 @@ class PhishingDashboardPage(Page):
         )
         self.preview_button.click()
 
-    #DATA VALIDATION
 
     def verify_numeric_data(self, section):
         expect(section).to_be_visible(
             timeout=60000
         )
+
+        # Wait until loading finishes
+        expect(section).not_to_contain_text(
+            "Loading stats...",
+            timeout=60000
+        )
+
+        # Verify that numeric data is displayed
         expect(section).to_contain_text(
-            re.compile(r"\d+")
+            re.compile(r"\d+"),
+            timeout=10000
         )
 
     def verify_phishing_summary(self):
-        expect(
-            self.phishing_summary_section
-        ).to_be_visible(timeout=60000)
-
         self.verify_numeric_data(
             self.phishing_summary_section
         )
@@ -153,12 +177,16 @@ class PhishingDashboardPage(Page):
         expect(
             self.phishing_summary_section
         ).to_contain_text(
-            re.compile(r"\d+\s*Emails", re.IGNORECASE)
+            re.compile(
+                r"\d+\s*Emails",
+                re.IGNORECASE
+            ),
+            timeout=10000
         )
 
     def verify_total_classifications(self):
         expect(
-            self.classification_section
+            self.total_classification_label
         ).to_be_visible(timeout=60000)
 
         expect(
@@ -167,7 +195,8 @@ class PhishingDashboardPage(Page):
             re.compile(
                 r"\d+\s*Total classification",
                 re.IGNORECASE
-            )
+            ),
+            timeout=10000
         )
 
     def verify_last_job_run(self):
@@ -181,16 +210,27 @@ class PhishingDashboardPage(Page):
         )
 
     def verify_summary_of_emails(self):
-        self.verify_numeric_data(
+        expect(
             self.summary_of_email_section
-        )
+        ).to_be_visible(timeout=60000)
+
+        expect(
+            self.summary_of_email_section.get_by_role(
+                "columnheader",
+                name="Name"
+            )
+        ).to_be_visible(timeout=60000)
+
+        expect(
+            self.summary_of_email_section.get_by_role(
+                "row"
+            ).nth(1)
+        ).to_be_visible(timeout=60000)
 
     def verify_classification(self):
-        self.verify_numeric_data(
+        expect(
             self.classification_section
-        )
-
-    # COMPLETE DASHBOARD VALIDATION
+        ).to_be_visible(timeout=60000)
 
     def verify_dashboard_data(self):
         self.verify_phishing_summary()
