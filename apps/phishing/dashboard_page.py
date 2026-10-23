@@ -1,4 +1,3 @@
-
 import re
 
 from playwright.sync_api import Page, expect
@@ -9,7 +8,7 @@ class PhishingDashboardPage:
     def __init__(self, page: Page):
         self.page = page
 
-   # LOCATORS
+    # LOCATORS
 
     @property
     def app_menu(self):
@@ -23,6 +22,21 @@ class PhishingDashboardPage:
             "textbox",
             name="Search"
         )
+
+    @property
+    def phishing_app_text(self):
+        return self.page.get_by_text(
+            re.compile(
+                r"Phishing \(Don't Delete\)\s+QA Team"
+            ),
+            exact=False
+        ).first
+
+    @property
+    def app_primary_action_button(self):
+        return self.page.locator(
+            "button.bg-primary.h-8"
+        ).first
 
     @property
     def discover_button(self):
@@ -44,7 +58,6 @@ class PhishingDashboardPage:
             "button",
             name="Preview"
         )
-
 
     @property
     def phishing_summary_section(self):
@@ -100,6 +113,8 @@ class PhishingDashboardPage:
             exact=True
         ).first
 
+    # NAVIGATION AND APP LAUNCH
+
     def open_home_page(self):
         self.page.goto(
             "https://acme.ui.dev.airrived.ai/home",
@@ -113,32 +128,46 @@ class PhishingDashboardPage:
         )
         self.app_menu.click()
 
-    def search_phishing_app(self):
         expect(self.search_box).to_be_visible(
             timeout=60000
         )
-        self.search_box.fill("Phishing")
+
+    def search_phishing_app(self):
+        # Match the initial search action in the new script.
+        self.search_box.click()
+        self.search_box.fill("phishi")
+
+        # Navigate to the Apps page with the initial query.
+        self.page.goto(
+            "https://acme.ui.dev.airrived.ai/apps?q=phishi",
+            wait_until="domcontentloaded",
+            timeout=60000
+        )
+
+        # Wait for the search field and perform the final search.
+        expect(self.search_box).to_be_visible(
+            timeout=60000
+        )
+        self.search_box.fill("phishing")
 
     def open_phishing_app(self):
-        phishing_app_link = self.page.locator(
-            'a[href="/apps?appId=6606&agentId=49"]'
-        ).first
-
-        expect(phishing_app_link).to_be_visible(
-            timeout=30000
+        expect(self.phishing_app_text).to_be_visible(
+            timeout=60000
         )
+        self.phishing_app_text.click()
 
-        phishing_app_link.click()
+    def click_app_primary_action(self):
+        expect(
+            self.app_primary_action_button
+        ).to_be_visible(timeout=60000)
 
-        expect(self.page).to_have_url(
-            re.compile(
-                r"https://acme\.ui\.dev\.airrived\.ai/"
-                r"apps\?appId=6606"
-                r"(?:&view=dashboard)?"
-                r"&agentId=49"
-            ),
-            timeout=30000
+        self.app_primary_action_button.click()
+
+    def launch_app(self):
+        expect(self.launch_button).to_be_visible(
+            timeout=60000
         )
+        self.launch_button.click()
 
     def open_dashboard_preview(self):
         expect(self.preview_button).to_be_visible(
@@ -146,19 +175,20 @@ class PhishingDashboardPage:
         )
         self.preview_button.click()
 
+    # DASHBOARD VERIFICATIONS
 
     def verify_numeric_data(self, section):
         expect(section).to_be_visible(
             timeout=60000
         )
 
-        # Wait until loading finishes
+        # Wait until loading finishes.
         expect(section).not_to_contain_text(
             "Loading stats...",
             timeout=60000
         )
 
-        # Verify that numeric data is displayed
+        # Verify that numeric data is displayed.
         expect(section).to_contain_text(
             re.compile(r"\d+"),
             timeout=10000
